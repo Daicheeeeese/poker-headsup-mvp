@@ -1,4 +1,4 @@
-import { PokerQuestion, BBStyle } from '../types/types';
+import { PokerQuestion, BBStyle, Card, Suit, Rank } from '../types/types';
 
 // BBスタイルの定義
 const bbStyles: Record<string, BBStyle> = {
@@ -43,8 +43,8 @@ const baseQuestions = [
     position: 'SB',
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'A' },
-        { suit: 'spades', rank: 'A' }
+        { suit: 'hearts' as Suit, rank: 'A' as Rank },
+        { suit: 'spades' as Suit, rank: 'K' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -68,8 +68,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Caller,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'Q' },
-        { suit: 'hearts', rank: 'Q' }
+        { suit: 'hearts' as Suit, rank: 'Q' as Rank },
+        { suit: 'hearts' as Suit, rank: 'Q' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -94,8 +94,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Viking,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'A' },
-        { suit: 'hearts', rank: '8' }
+        { suit: 'hearts' as Suit, rank: 'A' as Rank },
+        { suit: 'hearts' as Suit, rank: '8' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -119,8 +119,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Hunter,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'T' },
-        { suit: 'diamonds', rank: 'T' }
+        { suit: 'hearts' as Suit, rank: 'T' as Rank },
+        { suit: 'diamonds' as Suit, rank: 'T' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -144,8 +144,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Gambler,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: '7' },
-        { suit: 'hearts', rank: '6' }
+        { suit: 'hearts' as Suit, rank: '7' as Rank },
+        { suit: 'hearts' as Suit, rank: '6' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -167,8 +167,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Turtle,
     scenario: {
       heroHand: [
-        { suit: 'clubs', rank: 'Q' },
-        { suit: 'diamonds', rank: 'T' }
+        { suit: 'clubs' as Suit, rank: 'Q' as Rank },
+        { suit: 'diamonds' as Suit, rank: 'T' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -190,8 +190,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Hunter,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: '8' },
-        { suit: 'diamonds', rank: '8' }
+        { suit: 'hearts' as Suit, rank: '8' as Rank },
+        { suit: 'diamonds' as Suit, rank: '8' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -214,8 +214,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Viking,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: '9' },
-        { suit: 'hearts', rank: '7' }
+        { suit: 'hearts' as Suit, rank: '9' as Rank },
+        { suit: 'hearts' as Suit, rank: '7' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -238,8 +238,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Caller,
     scenario: {
       heroHand: [
-        { suit: 'clubs', rank: 'A' },
-        { suit: 'diamonds', rank: '2' }
+        { suit: 'clubs' as Suit, rank: 'A' as Rank },
+        { suit: 'diamonds' as Suit, rank: '2' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -262,8 +262,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Gambler,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: '4' },
-        { suit: 'hearts', rank: '3' }
+        { suit: 'hearts' as Suit, rank: '4' as Rank },
+        { suit: 'hearts' as Suit, rank: '3' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -286,8 +286,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Hunter,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'K' },
-        { suit: 'hearts', rank: 'Q' }
+        { suit: 'hearts' as Suit, rank: 'K' as Rank },
+        { suit: 'hearts' as Suit, rank: 'Q' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -310,8 +310,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Turtle,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'A' },
-        { suit: 'hearts', rank: '8' }
+        { suit: 'hearts' as Suit, rank: 'A' as Rank },
+        { suit: 'hearts' as Suit, rank: '8' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -334,8 +334,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Viking,
     scenario: {
       heroHand: [
-        { suit: 'clubs', rank: 'Q' },
-        { suit: 'diamonds', rank: 'T' }
+        { suit: 'clubs' as Suit, rank: 'Q' as Rank },
+        { suit: 'diamonds' as Suit, rank: 'T' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -358,8 +358,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Hunter,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'T' },
-        { suit: 'diamonds', rank: 'T' }
+        { suit: 'hearts' as Suit, rank: 'T' as Rank },
+        { suit: 'diamonds' as Suit, rank: 'T' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -382,8 +382,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Gambler,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: 'J' },
-        { suit: 'hearts', rank: 'T' }
+        { suit: 'hearts' as Suit, rank: 'J' as Rank },
+        { suit: 'hearts' as Suit, rank: 'T' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -406,8 +406,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Turtle,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: '2' },
-        { suit: 'diamonds', rank: '2' }
+        { suit: 'hearts' as Suit, rank: '2' as Rank },
+        { suit: 'diamonds' as Suit, rank: '2' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -430,8 +430,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Caller,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: '4' },
-        { suit: 'hearts', rank: '3' }
+        { suit: 'hearts' as Suit, rank: '4' as Rank },
+        { suit: 'hearts' as Suit, rank: '3' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -453,8 +453,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Gambler,
     scenario: {
       heroHand: [
-        { suit: 'clubs', rank: 'A' },
-        { suit: 'diamonds', rank: '2' }
+        { suit: 'clubs' as Suit, rank: 'A' as Rank },
+        { suit: 'diamonds' as Suit, rank: '2' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -476,8 +476,8 @@ const baseQuestions = [
     bbStyle: bbStyles.Turtle,
     scenario: {
       heroHand: [
-        { suit: 'hearts', rank: '2' },
-        { suit: 'diamonds', rank: '2' }
+        { suit: 'hearts' as Suit, rank: '2' as Rank },
+        { suit: 'diamonds' as Suit, rank: '2' as Rank }
       ],
       potSize: 100,
       stackSize: 1000,
@@ -494,7 +494,7 @@ const baseQuestions = [
 ];
 
 // 問題データにランダムなBBスタイルを追加して出力
-export const questions = baseQuestions.map(q => ({
+export const questions: PokerQuestion[] = baseQuestions.map(q => ({
   ...q,
   bbStyles: bbStyles  // ランダム化をコンポーネント側で行うため、全てのスタイルを渡す
 })); 

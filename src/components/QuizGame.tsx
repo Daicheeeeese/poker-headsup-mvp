@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { PokerQuestion, Card, BBStyle } from '../types/types';
+import { PokerQuestion, Card, BBStyle, Suit, Rank } from '../types/types';
 import { questions } from '../data/questions';
 import ExplanationGenerator from './ExplanationGenerator';
+
+interface Question {
+  scenario: {
+    heroHand: {
+      suit: Suit;
+      rank: Rank;
+    }[];
+  };
+  position: string;
+  correctAnswer: string;
+}
+
+const getHandString = (hand: Card[]): Card[] => {
+  return hand.map(card => ({
+    suit: card.suit,
+    rank: card.rank
+  }));
+};
 
 const QuizGame: React.FC = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -9,6 +27,7 @@ const QuizGame: React.FC = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [score, setScore] = useState(0);
   const [bbStyle, setBBStyle] = useState<BBStyle | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<PokerQuestion | null>(null);
 
   useEffect(() => {
     // コンポーネントマウント時とクイズが変わるたびにBBスタイルを設定
@@ -17,7 +36,9 @@ const QuizGame: React.FC = () => {
     setBBStyle(styles[randomIndex]);
   }, [currentQuestionIndex]);
 
-  const currentQuestion = questions[currentQuestionIndex];
+  useEffect(() => {
+    setCurrentQuestion(questions[currentQuestionIndex] as PokerQuestion);
+  }, [currentQuestionIndex]);
 
   if (!currentQuestion || !bbStyle) {
     return <div>Loading...</div>;
@@ -37,12 +58,6 @@ const QuizGame: React.FC = () => {
     setCurrentQuestionIndex(prev => 
       prev < questions.length - 1 ? prev + 1 : 0
     );
-  };
-
-  const getHandString = (hand: Card[]): string => {
-    return hand.map(card => `${card.rank}${card.suit === 'hearts' ? '♥' : 
-      card.suit === 'diamonds' ? '♦' : 
-      card.suit === 'clubs' ? '♣' : '♠'}`).join('');
   };
 
   return (
