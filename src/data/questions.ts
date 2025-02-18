@@ -25,6 +25,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'A' as Rank },
@@ -49,7 +50,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Caller,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'Q' as Rank },
@@ -75,7 +76,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Viking,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'A' as Rank },
@@ -100,7 +101,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Hunter,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'T' as Rank },
@@ -125,7 +126,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Gambler,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: '7' as Rank },
@@ -148,7 +149,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Turtle,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'clubs' as Suit, rank: 'Q' as Rank },
@@ -171,7 +172,7 @@ const baseQuestions = [
     id: '7',
     street: 'preflop',
     position: 'SB',
-    bbStyle: bbStyles.Hunter,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: '8' as Rank },
@@ -195,7 +196,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Viking,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: '9' as Rank },
@@ -219,7 +220,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Caller,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'clubs' as Suit, rank: 'A' as Rank },
@@ -243,7 +244,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Gambler,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: '4' as Rank },
@@ -267,7 +268,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Hunter,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'K' as Rank },
@@ -291,7 +292,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Turtle,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'A' as Rank },
@@ -315,7 +316,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Viking,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'clubs' as Suit, rank: 'Q' as Rank },
@@ -339,7 +340,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Hunter,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'T' as Rank },
@@ -363,7 +364,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Gambler,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: 'J' as Rank },
@@ -387,7 +388,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Turtle,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: '2' as Rank },
@@ -411,7 +412,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Caller,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: '4' as Rank },
@@ -434,7 +435,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Gambler,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'clubs' as Suit, rank: 'A' as Rank },
@@ -457,7 +458,7 @@ const baseQuestions = [
     street: 'preflop',
     anti: 0,
     position: 'SB',
-    bbStyle: bbStyles.Turtle,
+    bbStyles: bbStyles,
     scenario: {
       heroHand: [
         { suit: 'hearts' as Suit, rank: '2' as Rank },
