@@ -28,9 +28,13 @@ module.exports = {
           hover: '#243242',
         },
       },
+      backgroundImage: {
+        'poker-pattern': "url('/poker-chips-pattern.png')",
+      },
       boxShadow: {
         'glow': '0 0 20px rgba(244, 180, 0, 0.15)',
         'card': '0 4px 20px rgba(0, 0, 0, 0.2)',
+        'hover': '0 8px 30px rgba(244, 180, 0, 0.2)',
       },
     },
   },

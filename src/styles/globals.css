@@ -21,6 +21,7 @@
 
 body {
   @apply bg-dark-bg text-white font-inter;
+  background-image: linear-gradient(rgba(18, 25, 32, 0.97), rgba(18, 25, 32, 0.97)), url('/poker-chips-pattern.png');
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -56,13 +57,19 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card-hover {
-  @apply transition-all duration-300 hover:shadow-glow;
+  @apply transition-all duration-300 hover:shadow-hover hover:translate-y-[-2px];
 }
 
 .btn-primary {
-  @apply bg-gold hover:bg-gold-light text-navy font-medium transition-all duration-300;
+  @apply bg-gold hover:bg-gold-light text-navy font-medium transition-all duration-300 
+         hover:shadow-glow hover:translate-y-[-2px];
 }
 
 .btn-secondary {
-  @apply bg-navy hover:bg-navy-light text-white font-medium transition-all duration-300;
+  @apply bg-navy hover:bg-navy-light text-white font-medium transition-all duration-300
+         hover:shadow-card hover:translate-y-[-2px];
+}
+
+.stat-card {
+  @apply bg-dark-card rounded-lg p-4 hover:bg-dark-hover transition-all duration-300;
 } 
