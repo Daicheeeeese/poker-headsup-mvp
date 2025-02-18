@@ -3,8 +3,8 @@ export type Rank = 'A' | 'K' | 'Q' | 'J' | 'T' | '9' | '8' | '7' | '6' | '5' | '
 export type BBStyleType = 'aggressive' | 'passive' | 'balanced';
 
 export interface Card {
-  suit: Suit;
-  rank: Rank;
+  rank: string;
+  suit: string;
 }
 
 export type BBCategory = 'Turtle' | 'Caller' | 'Viking' | 'Hunter' | 'Gambler';

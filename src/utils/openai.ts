@@ -1,14 +1,15 @@
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function generateExplanation(
-  hand: string,
+  hand: Card[],
   action: string,
   isCorrect: boolean,
-  position: string
+  position: string,
+  bbStyle: any
 ): Promise<string> {
   const prompt = `
     ポーカーのヘッズアップで、${position}ポジションで${hand}を持っているプレイヤーが${action}を選択しました。
@@ -24,4 +25,6 @@ export async function generateExplanation(
   });
 
   return response.choices[0].message.content || "解説を生成できませんでした。";
-} 
+}
+
+// 必要に応じて他の関数をエクスポート 

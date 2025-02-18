@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { generatePokerExplanation } from '../utils/openai';
+import { generateExplanation } from '../utils/openai';
 import { Card } from '../types/types';
 
 // カードの配列を文字列に変換する関数を追加
@@ -27,7 +27,7 @@ const ExplanationGenerator: React.FC<ExplanationGeneratorProps> = ({
     const getExplanation = async () => {
       setLoading(true);
       try {
-        const generatedExplanation = await generatePokerExplanation(
+        const generatedExplanation = await generateExplanation(
           formatHand(hand),  // Card[]を文字列に変換
           position,
           selectedAction,
