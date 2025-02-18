@@ -6,6 +6,18 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// スートのシンボル変換
+const suitSymbols: { [key: string]: string } = {
+  'hearts': '♥',
+  'diamonds': '♦',
+  'clubs': '♣',
+  'spades': '♠'
+};
+
+function formatHand(hand: Card[]): string {
+  return hand.map(card => `${card.rank}${suitSymbols[card.suit]}`).join(' ');
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -76,25 +88,60 @@ async function generateExplanation(
   position: string,
   bbStyle: any
 ): Promise<string> {
+  const formattedHand = formatHand(hand);
+
   const prompt = `
-    ポーカーのヘッズアップで、${position}ポジションで${hand[0].rank}${hand[0].suit} ${hand[1].rank}${hand[1].suit}を持っているプレイヤーが${action}を選択しました。
+    ポーカーのヘッズアップシチュエーションについて、250字以内で解説してください。
+
+    状況：
+    - プレイヤーのポジション: ${position}
+    - プレイヤーのハンド: ${formattedHand}
+    - 選択したアクション: ${action}
+    - 相手プレイヤーの特徴: ${bbStyle.category}（${bbStyle.type}）
+    - 相手の傾向: ${bbStyle.characteristics}
+    
     これは${isCorrect ? '正しい' : '間違った'}選択です。
-    相手プレイヤーは${bbStyle.characteristics}です。
-    150〜200字で具体的なアドバイスを含めて解説してください。
+    
+    制約：
+    - 必ず250字以内で解説してください
+    - ポーカー用語を適切に使用してください
+    - 相手の特徴を踏まえた具体的なアドバイスを含めてください
+    - 結論を明確に示してください
+    - 実践的な改善点を提示してください
+    - カードの表記は${formattedHand}のように、数字とスートシンボル（♠♥♦♣）を使用してください
   `;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: "あなたはポーカーのプロフェッショナルコーチです。技術的な解説を提供してください。"
-      },
-      { role: "user", content: prompt }
-    ],
-    max_tokens: 200,
-    temperature: 0.7,
-  });
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "あなたはポーカーのプロフェッショナルコーチです。250字以内で技術的な解説を提供してください。カードの表記には必ずスートシンボル（♠♥♦♣）を使用してください。"
+        },
+        { role: "user", content: prompt }
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+      presence_penalty: 0.6,
+      frequency_penalty: 0.5,
+    });
 
-  return response.choices[0]?.message?.content || "解説を生成できませんでした。";
+    let explanation = response.choices[0]?.message?.content || "解説を生成できませんでした。";
+
+    // 文字数が250を超える場合は切り詰める
+    if (explanation.length > 250) {
+      const lastSentenceEnd = explanation.lastIndexOf('。', 250);
+      if (lastSentenceEnd > 0) {
+        explanation = explanation.substring(0, lastSentenceEnd + 1);
+      } else {
+        explanation = explanation.substring(0, 250) + '。';
+      }
+    }
+
+    return explanation;
+  } catch (error) {
+    console.error('Error generating explanation:', error);
+    return "申し訳ありません。解説の生成に失敗しました。";
+  }
 } 

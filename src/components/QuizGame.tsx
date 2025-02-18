@@ -3,7 +3,7 @@ import { PokerQuestion, Card, BBStyle, Suit, Rank } from '../types/types';
 import { questions } from '../data/questions';
 import ExplanationGenerator from './ExplanationGenerator';
 import { motion } from 'framer-motion';
-import { FaHome, FaChartBar, FaCog, FaInfoCircle } from 'react-icons/fa';
+import { FaHome, FaChartBar, FaCog, FaInfoCircle, FaUser, FaMapMarkerAlt } from 'react-icons/fa';
 import { GiWitchFlight, GiArtificialIntelligence } from 'react-icons/gi';
 import '@fontsource/inter';
 import PokerCard from './PokerCard';
@@ -27,12 +27,39 @@ interface ActionResponse {
   explanation: string;
 }
 
-const getHandString = (hand: Card[]): Card[] => {
-  return hand.map(card => ({
-    suit: card.suit,
-    rank: card.rank
-  }));
-};
+// プレイヤータイプの定義
+const PLAYER_TYPES = [
+  {
+    category: 'Nit',
+    type: 'タートル',
+    characteristics: '超タイトで慎重。強いハンドしかプレイしない。プリフロップでのフォールド率が高く、3ベットは超強いハンドのみ。',
+    icon: '🛡️'
+  },
+  {
+    category: 'Loose Passive',
+    type: 'コーラー',
+    characteristics: 'ほぼ何でもコールするが、自分からは攻めない。コール中心で、ベットやレイズが少ない。',
+    icon: '🏕️'
+  },
+  {
+    category: 'LAG',
+    type: 'バイキング',
+    characteristics: '広いレンジで攻撃的にプレイ。3ベット・ブラフが多い。常にアクションを起こし、相手を圧倒する。',
+    icon: '🔥'
+  },
+  {
+    category: 'TAG',
+    type: 'ハンター',
+    characteristics: 'GTOに近いバランスの取れたプレイ。適切なハンドで積極的にプレイし、ポストフロップでもバランスが良い。',
+    icon: '🦊'
+  },
+  {
+    category: 'Maniac',
+    type: 'ギャンブラー',
+    characteristics: 'どんなハンドでも積極的にプレイし、リスクを恐れない。極端にアグレッシブで、オールインや4ベットが多い。',
+    icon: '🎭'
+  }
+];
 
 const QuizGame: React.FC = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -45,10 +72,13 @@ const QuizGame: React.FC = () => {
   const [currentHand, setCurrentHand] = useState<Card[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [opponentStyle, setOpponentStyle] = useState(PLAYER_TYPES[0]);
 
   const DEFAULT_EXPLANATION = "このシチュエーションでは、ポジションとハンドの強さを考慮した判断が重要です。相手の特徴を活かしたプレイを心がけましょう。";
 
   const isDefaultExplanation = explanation === DEFAULT_EXPLANATION;
+
+  const position = 'SB';
 
   useEffect(() => {
     if (currentQuestionIndex < questions.length) {
@@ -68,7 +98,9 @@ const QuizGame: React.FC = () => {
 
   const generateNewHand = () => {
     const newHand = getRandomHand();
+    const newOpponentStyle = PLAYER_TYPES[Math.floor(Math.random() * PLAYER_TYPES.length)];
     setCurrentHand(newHand);
+    setOpponentStyle(newOpponentStyle);
     setCurrentQuestion(questions[currentQuestionIndex] as PokerQuestion);
     setExplanation("");
     setSelectedAnswer("");
@@ -89,12 +121,8 @@ const QuizGame: React.FC = () => {
         body: JSON.stringify({
           hand: currentHand,
           action: action,
-          position: 'BB',
-          bbStyle: {
-            category: 'Aggressive',
-            type: 'LAG',
-            characteristics: '積極的なプレイヤー'
-          }
+          position: 'SB',
+          bbStyle: opponentStyle
         }),
       });
 
@@ -136,6 +164,33 @@ const QuizGame: React.FC = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-12">
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="bg-dark-card/90 backdrop-blur-sm rounded-xl shadow-card p-4 border border-gold/10">
+            <div className="flex items-center gap-3">
+              <FaMapMarkerAlt className="text-gold text-xl" />
+              <div>
+                <h3 className="text-gold font-medium">あなたのポジション</h3>
+                <p className="text-white/90 text-lg font-semibold">SB</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-dark-card/90 backdrop-blur-sm rounded-xl shadow-card p-4 border border-gold/10">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">{opponentStyle.icon}</div>
+              <div>
+                <h3 className="text-gold font-medium">相手プレイヤーの特徴</h3>
+                <p className="text-white/90">
+                  {opponentStyle.category} ({opponentStyle.type})
+                </p>
+                <p className="text-white/80 text-sm mt-1">
+                  {opponentStyle.characteristics}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-dark-card/90 backdrop-blur-sm rounded-xl shadow-card p-8 mb-8 border border-gold/10">
           <h2 className="text-xl font-poppins font-semibold text-gold mb-4">あなたのハンド</h2>
           <div className="flex justify-center space-x-4">
@@ -155,7 +210,6 @@ const QuizGame: React.FC = () => {
           </div>
         </div>
 
-        {/* アクション選択ボタン */}
         <div className="flex justify-center space-x-4 mb-8">
           {['Fold', 'Call', 'Raise 3BB'].map((action) => (
             <button
@@ -173,7 +227,6 @@ const QuizGame: React.FC = () => {
           ))}
         </div>
 
-        {/* 解説表示部分 */}
         {selectedAnswer && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
