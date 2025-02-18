@@ -54,6 +54,7 @@ function formatHand(hand: Card[]): string {
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 10000, // タイムアウトはここで設定
 });
 
 // バックアップの解説生成関数
@@ -109,7 +110,6 @@ export default async function handler(
         temperature: 0.7,
         presence_penalty: 0.6,
         frequency_penalty: 0.5,
-        timeout: 10000, // 10秒でタイムアウト
       });
 
       const explanation = response.choices[0]?.message?.content;

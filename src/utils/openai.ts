@@ -1,7 +1,9 @@
 import OpenAI from 'openai';
+import { Card } from '../types/types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 10000,
 });
 
 export async function generateExplanation(
