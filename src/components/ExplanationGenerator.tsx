@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { generatePokerExplanation } from '../utils/openai';
+import { Card } from '../types/types';
+
+// カードの配列を文字列に変換する関数を追加
+const formatHand = (hand: Card[]): string => {
+  return hand.map(card => `${card.rank}${card.suit.charAt(0).toUpperCase()}`).join(' ');
+};
 
 interface ExplanationGeneratorProps {
-  hand: string;
+  hand: Card[];
   position: string;
   selectedAction: string;
   isCorrect: boolean;
@@ -22,7 +28,7 @@ const ExplanationGenerator: React.FC<ExplanationGeneratorProps> = ({
       setLoading(true);
       try {
         const generatedExplanation = await generatePokerExplanation(
-          hand,
+          formatHand(hand),  // Card[]を文字列に変換
           position,
           selectedAction,
           isCorrect
