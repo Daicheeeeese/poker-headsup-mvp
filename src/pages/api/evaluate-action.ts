@@ -5,11 +5,11 @@ import { Card } from '../../types/types';
 // OpenAIの設定をより堅牢に
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '', // 空文字をフォールバックとして設定
-  timeout: 30000, // タイムアウトを30秒に延長
+  timeout: 60000, // タイムアウトをさらに延長
 });
 
-// スートのシンボル変換
-const suitSymbols: { [key: string]: string } = {
+// スートの変換マップ
+const suitMap: { [key: string]: string } = {
   'hearts': '♥',
   'diamonds': '♦',
   'clubs': '♣',
@@ -17,33 +17,39 @@ const suitSymbols: { [key: string]: string } = {
 };
 
 function formatHand(hand: Card[]): string {
-  return hand.map(card => `${card.rank}${suitSymbols[card.suit]}`).join(' ');
+  return hand.map(card => `${card.rank}${suitMap[card.suit]}`).join(' ');
 }
 
-// レスポンスの型定義
+// レスポンスの型定義を修正
 type ApiResponse = {
   isCorrect?: boolean;
   explanation?: string;
   error?: string;
+  details?: string; // details プロパティを追加
 };
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>
 ) {
+  console.log('API Handler: Started'); // デバッグログ
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   if (!process.env.OPENAI_API_KEY) {
+    console.error('API Key is missing'); // デバッグログ
     return res.status(500).json({ error: 'OpenAI API key is not configured' });
   }
 
   try {
+    console.log('Request body:', JSON.stringify(req.body)); // デバッグログ
     const { hand, action, position, bbStyle } = req.body;
 
     // 入力バリデーション
     if (!hand || !action || !position || !bbStyle) {
+      console.error('Missing parameters:', { hand, action, position, bbStyle }); // デバッグログ
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
@@ -53,25 +59,22 @@ export default async function handler(
     // アクションの適切性を評価
     const isCorrect = evaluateAction(handStrength, action, position);
 
-    try {
-      // OpenAIによる解説生成
-      const explanation = await generateExplanation(hand, action, isCorrect, position, bbStyle);
-      
-      res.status(200).json({
-        isCorrect,
-        explanation
-      });
-    } catch (openaiError) {
-      console.error('OpenAI API Error:', openaiError);
-      res.status(500).json({
-        isCorrect,
-        explanation: '申し訳ありません。解説の生成中にエラーが発生しました。しばらく待ってから再度お試しください。'
-      });
-    }
+    console.log('Generating explanation...'); // デバッグログ
+    const explanation = await generateExplanation(hand, action, isCorrect, position, bbStyle);
+    console.log('Explanation generated successfully'); // デバッグログ
 
-  } catch (error) {
-    console.error('General Error:', error);
-    res.status(500).json({ error: 'Internal server error occurred' });
+    return res.status(200).json({
+      isCorrect,
+      explanation
+    });
+
+  } catch (error: unknown) {
+    console.error('Detailed error:', error); // デバッグログ
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return res.status(500).json({ 
+      error: 'Internal server error occurred',
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+    });
   }
 }
 
@@ -114,51 +117,82 @@ async function generateExplanation(
   position: string,
   bbStyle: any
 ): Promise<string> {
-  const formattedHand = formatHand(hand);
-
   try {
+    // ハンドを読みやすい形式に変換
+    const formattedHand = hand.map(card => 
+      `${card.rank}${suitMap[card.suit]}`
+    ).join(' ');
+
+    // アクションの日本語表記
+    const actionMap: { [key: string]: string } = {
+      'fold': 'フォールド',
+      'call': 'コール',
+      'raise': 'レイズ'
+    };
+    const actionJP = actionMap[action] || action;
+
+    // シンプルで明確なプロンプト
+    const prompt = `
+以下のポーカーの状況について、100文字程度で簡潔に解説してください：
+
+状況：
+・あなたの位置：${position}
+・ハンド：${formattedHand}
+・選択：${actionJP}
+・相手タイプ：${bbStyle.type}
+・相手の特徴：${bbStyle.characteristics}
+
+この選択は${isCorrect ? '適切' : '不適切'}です。その理由と、より良いプレイについて説明してください。
+`;
+
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "あなたはポーカーのプロフェッショナルコーチです。250字以内で技術的な解説を提供してください。カードの表記には必ずスートシンボル（♠♥♦♣）を使用してください。"
+          content: "あなたはポーカーのプロコーチです。簡潔で実践的なアドバイスを提供してください。"
         },
         {
           role: "user",
-          content: `
-            ポーカーのヘッズアップシチュエーションについて、250字以内で解説してください。
-
-            状況：
-            - プレイヤーのポジション: ${position}
-            - プレイヤーのハンド: ${formattedHand}
-            - 選択したアクション: ${action}
-            - 相手プレイヤーの特徴: ${bbStyle.category}（${bbStyle.type}）
-            - 相手の傾向: ${bbStyle.characteristics}
-            
-            これは${isCorrect ? '正しい' : '間違った'}選択です。
-          `
+          content: prompt
         }
       ],
-      max_tokens: 500,
+      max_tokens: 150,
       temperature: 0.7,
-      presence_penalty: 0.6,
-      frequency_penalty: 0.5,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
     });
 
-    let explanation = response.choices[0]?.message?.content || "解説を生成できませんでした。";
+    let explanation = response.choices[0]?.message?.content;
 
-    if (explanation.length > 250) {
-      const lastSentenceEnd = explanation.lastIndexOf('。', 250);
-      explanation = lastSentenceEnd > 0 
-        ? explanation.substring(0, lastSentenceEnd + 1)
-        : explanation.substring(0, 250) + '。';
+    if (!explanation) {
+      return "申し訳ありません。解説を生成できませんでした。もう一度お試しください。";
+    }
+
+    // 文字数制限（必要な場合のみ）
+    if (explanation.length > 150) {
+      const lastSentenceEnd = explanation.lastIndexOf('。', 150);
+      if (lastSentenceEnd > 0) {
+        explanation = explanation.substring(0, lastSentenceEnd + 1);
+      }
     }
 
     return explanation;
 
-  } catch (error) {
-    console.error('OpenAI API Error details:', error);
-    throw new Error('Failed to generate explanation');
+  } catch (error: unknown) {
+    console.error('OpenAI API Error:', error);
+    
+    if (error instanceof Error) {
+      const openAIError = error as any;
+      if (openAIError.code === 'insufficient_quota') {
+        return "API制限に達しました。しばらく待ってから再度お試しください。";
+      }
+      if (openAIError.code === 'rate_limit_exceeded') {
+        return "リクエストが集中しています。少し待ってから再度お試しください。";
+      }
+    }
+    
+    return "解説の生成に失敗しました。もう一度お試しください。";
   }
 } 
