@@ -1,38 +1,22 @@
-import { PokerQuestion, BBStyle, Card, Suit, Rank } from '../types/types';
+import { PokerQuestion, Suit, Rank, BBStyle } from '../types/types';
 
-// BBスタイルの定義
-const bbStyles: Record<string, BBStyle> = {
-  Turtle: {
-    category: 'Turtle',
-    type: 'ニット型',
-    characteristics: 'フォールド多め、3ベット少なめ',
-    strategy: 'ワイドにオープンし、C-betを増やす'
+const bbStyles: BBStyle[] = [
+  {
+    type: 'aggressive',
+    category: 'LAG',
+    characteristics: 'ブラフが多く、アグレッシブなプレイスタイル'
   },
-  Caller: {
-    category: 'Caller',
-    type: 'ルースパッシブ型',
-    characteristics: '何でもコール、3ベット少なめ',
-    strategy: 'バリュー重視、ブラフは少なめ'
+  {
+    type: 'passive',
+    category: 'TAG',
+    characteristics: 'タイトでコントロールされたプレイスタイル'
   },
-  Viking: {
-    category: 'Viking',
-    type: 'ルースアグレッシブ型',
-    characteristics: '3ベット＆ブラフ多め',
-    strategy: '4ベットを適切に使い、ポストフロップで戦う'
-  },
-  Hunter: {
-    category: 'Hunter',
-    type: 'タイトアグレッシブ型',
-    characteristics: 'GTO寄りでバランスが良い',
-    strategy: 'GTOを意識しながら、相手の傾向を分析'
-  },
-  Gambler: {
-    category: 'Gambler',
-    type: 'マニアック型',
-    characteristics: '広範囲のハンドで攻撃的',
-    strategy: 'プレミアムハンドはトラップ戦略、4ベットを活用'
+  {
+    type: 'balanced',
+    category: 'REG',
+    characteristics: 'バランスの取れた標準的なプレイスタイル'
   }
-};
+];
 
 // 基本の問題データを定義（BBスタイル以外の情報）
 const baseQuestions = [

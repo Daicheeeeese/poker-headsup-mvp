@@ -1,6 +1,6 @@
 export type Suit = 'hearts' | 'diamonds' | 'clubs' | 'spades';
 export type Rank = 'A' | 'K' | 'Q' | 'J' | 'T' | '9' | '8' | '7' | '6' | '5' | '4' | '3' | '2';
-export type BBStyle = 'aggressive' | 'passive' | 'balanced';
+export type BBStyleType = 'aggressive' | 'passive' | 'balanced';
 
 export interface Card {
   suit: Suit;
@@ -10,8 +10,8 @@ export interface Card {
 export type BBCategory = 'Turtle' | 'Caller' | 'Viking' | 'Hunter' | 'Gambler';
 
 export interface BBStyle {
+  type: BBStyleType;
   category: string;
-  type: string;
   characteristics: string;
 }
 
@@ -27,4 +27,5 @@ export interface PokerQuestion {
   };
   correctAnswer: string;
   bbStyles: BBStyle[];
+  options: string[];
 } 
