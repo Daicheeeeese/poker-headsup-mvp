@@ -20,6 +20,7 @@ export interface PokerQuestion {
   id: string;
   street: string;
   position: string;
+  anti: number;
   scenario: {
     heroHand: Card[];
     potSize: number;
