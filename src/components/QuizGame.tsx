@@ -126,12 +126,21 @@ const QuizGame: React.FC = () => {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       setIsCorrect(data.isCorrect);
-      setExplanation(data.explanation);
+      setExplanation(data.explanation || '解説を生成できませんでした。');
     } catch (error) {
       console.error('Action evaluation failed:', error);
-      setExplanation("申し訳ありません。解説の生成に失敗しました。");
+      setExplanation("申し訳ありません。解説の生成に失敗しました。しばらく待ってから再度お試しください。");
     } finally {
       setIsGenerating(false);
     }

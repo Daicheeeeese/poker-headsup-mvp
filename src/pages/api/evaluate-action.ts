@@ -1,9 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import OpenAI from 'openai';
-import { Card } from '../../utils/cardGenerator';
+import { Card } from '../../types/types';
 
+// OpenAIの設定をより堅牢に
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || '', // 空文字をフォールバックとして設定
+  timeout: 30000, // タイムアウトを30秒に延長
 });
 
 // スートのシンボル変換
@@ -18,16 +20,32 @@ function formatHand(hand: Card[]): string {
   return hand.map(card => `${card.rank}${suitSymbols[card.suit]}`).join(' ');
 }
 
+// レスポンスの型定義
+type ApiResponse = {
+  isCorrect?: boolean;
+  explanation?: string;
+  error?: string;
+};
+
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<ApiResponse>
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'OpenAI API key is not configured' });
+  }
+
   try {
     const { hand, action, position, bbStyle } = req.body;
+
+    // 入力バリデーション
+    if (!hand || !action || !position || !bbStyle) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
 
     // ハンドの強さを評価
     const handStrength = evaluateHandStrength(hand);
@@ -35,17 +53,25 @@ export default async function handler(
     // アクションの適切性を評価
     const isCorrect = evaluateAction(handStrength, action, position);
 
-    // OpenAIによる解説生成
-    const explanation = await generateExplanation(hand, action, isCorrect, position, bbStyle);
-
-    res.status(200).json({
-      isCorrect,
-      explanation
-    });
+    try {
+      // OpenAIによる解説生成
+      const explanation = await generateExplanation(hand, action, isCorrect, position, bbStyle);
+      
+      res.status(200).json({
+        isCorrect,
+        explanation
+      });
+    } catch (openaiError) {
+      console.error('OpenAI API Error:', openaiError);
+      res.status(500).json({
+        isCorrect,
+        explanation: '申し訳ありません。解説の生成中にエラーが発生しました。しばらく待ってから再度お試しください。'
+      });
+    }
 
   } catch (error) {
-    console.error('Error in action evaluation:', error);
-    res.status(500).json({ error: 'Action evaluation failed' });
+    console.error('General Error:', error);
+    res.status(500).json({ error: 'Internal server error occurred' });
   }
 }
 
@@ -90,27 +116,6 @@ async function generateExplanation(
 ): Promise<string> {
   const formattedHand = formatHand(hand);
 
-  const prompt = `
-    ポーカーのヘッズアップシチュエーションについて、250字以内で解説してください。
-
-    状況：
-    - プレイヤーのポジション: ${position}
-    - プレイヤーのハンド: ${formattedHand}
-    - 選択したアクション: ${action}
-    - 相手プレイヤーの特徴: ${bbStyle.category}（${bbStyle.type}）
-    - 相手の傾向: ${bbStyle.characteristics}
-    
-    これは${isCorrect ? '正しい' : '間違った'}選択です。
-    
-    制約：
-    - 必ず250字以内で解説してください
-    - ポーカー用語を適切に使用してください
-    - 相手の特徴を踏まえた具体的なアドバイスを含めてください
-    - 結論を明確に示してください
-    - 実践的な改善点を提示してください
-    - カードの表記は${formattedHand}のように、数字とスートシンボル（♠♥♦♣）を使用してください
-  `;
-
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -119,7 +124,21 @@ async function generateExplanation(
           role: "system",
           content: "あなたはポーカーのプロフェッショナルコーチです。250字以内で技術的な解説を提供してください。カードの表記には必ずスートシンボル（♠♥♦♣）を使用してください。"
         },
-        { role: "user", content: prompt }
+        {
+          role: "user",
+          content: `
+            ポーカーのヘッズアップシチュエーションについて、250字以内で解説してください。
+
+            状況：
+            - プレイヤーのポジション: ${position}
+            - プレイヤーのハンド: ${formattedHand}
+            - 選択したアクション: ${action}
+            - 相手プレイヤーの特徴: ${bbStyle.category}（${bbStyle.type}）
+            - 相手の傾向: ${bbStyle.characteristics}
+            
+            これは${isCorrect ? '正しい' : '間違った'}選択です。
+          `
+        }
       ],
       max_tokens: 500,
       temperature: 0.7,
@@ -129,19 +148,17 @@ async function generateExplanation(
 
     let explanation = response.choices[0]?.message?.content || "解説を生成できませんでした。";
 
-    // 文字数が250を超える場合は切り詰める
     if (explanation.length > 250) {
       const lastSentenceEnd = explanation.lastIndexOf('。', 250);
-      if (lastSentenceEnd > 0) {
-        explanation = explanation.substring(0, lastSentenceEnd + 1);
-      } else {
-        explanation = explanation.substring(0, 250) + '。';
-      }
+      explanation = lastSentenceEnd > 0 
+        ? explanation.substring(0, lastSentenceEnd + 1)
+        : explanation.substring(0, 250) + '。';
     }
 
     return explanation;
+
   } catch (error) {
-    console.error('Error generating explanation:', error);
-    return "申し訳ありません。解説の生成に失敗しました。";
+    console.error('OpenAI API Error details:', error);
+    throw new Error('Failed to generate explanation');
   }
 } 
