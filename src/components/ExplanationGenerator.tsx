@@ -12,50 +12,63 @@ interface ExplanationGeneratorProps {
   position: string;
   selectedAction: string;
   isCorrect: boolean;
+  bbStyle: {
+    category: string;
+    type: string;
+    characteristics: string;
+  };
 }
 
 const ExplanationGenerator: React.FC<ExplanationGeneratorProps> = ({
   hand,
   position,
   selectedAction,
-  isCorrect
+  isCorrect,
+  bbStyle
 }) => {
   const [explanation, setExplanation] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getExplanation = async () => {
+    const generateNewExplanation = async () => {
+      setError(null);
       setLoading(true);
       try {
         const generatedExplanation = await generateExplanation(
-          formatHand(hand),  // Card[]を文字列に変換
-          position,
+          hand,
           selectedAction,
-          isCorrect
+          isCorrect,
+          position,
+          bbStyle
         );
         setExplanation(generatedExplanation);
-      } catch (error) {
-        console.error('Error generating explanation:', error);
-        setExplanation('解説の生成中にエラーが発生しました。');
+      } catch (err) {
+        setError('説明の生成中にエラーが発生しました。');
+        console.error('Explanation generation error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     if (selectedAction) {
-      getExplanation();
+      generateNewExplanation();
     }
-  }, [hand, position, selectedAction, isCorrect]);
+  }, [hand, position, selectedAction, isCorrect, bbStyle]);
+
+  if (loading) {
+    return <div>生成中...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
 
   return (
-    <div className="explanation-container bg-white rounded-xl p-6 shadow-sm">
-      {loading ? (
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <p className="text-gray-600 font-medium">解説を生成中...</p>
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      ) : (
-        <div className="prose prose-blue max-w-none">
-          <p className="text-gray-700 leading-relaxed">{explanation}</p>
+    <div>
+      {explanation && (
+        <div className="mt-4 p-4 bg-gray-800 rounded-lg">
+          <p className="text-white">{explanation}</p>
         </div>
       )}
     </div>
