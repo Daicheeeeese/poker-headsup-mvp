@@ -8,16 +8,29 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        poppins: ['Poppins', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
       },
       colors: {
-        navy: '#1E2A38',
-        gold: '#F4B400',
-        darkGray: '#2C3E50',
-        lightBg: '#F8F9FA',
+        navy: {
+          DEFAULT: '#1E2A38',
+          light: '#2A3A4D',
+          dark: '#162029',
+        },
+        gold: {
+          DEFAULT: '#F4B400',
+          light: '#FFD54F',
+          dark: '#CC9900',
+        },
+        dark: {
+          bg: '#121920',
+          card: '#1A242F',
+          hover: '#243242',
+        },
       },
       boxShadow: {
-        'custom': '0px 4px 12px rgba(0, 0, 0, 0.1)',
+        'glow': '0 0 20px rgba(244, 180, 0, 0.15)',
+        'card': '0 4px 20px rgba(0, 0, 0, 0.2)',
       },
     },
   },

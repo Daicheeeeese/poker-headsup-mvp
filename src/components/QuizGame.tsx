@@ -65,21 +65,21 @@ const QuizGame: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-['Inter']">
+    <div className="min-h-screen bg-dark-bg">
       {/* ヘッダー */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-navy shadow-card">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <span className="text-[#1E2A38] text-2xl font-bold">🎲 Poker Trainer</span>
+          <div className="flex items-center space-x-3">
+            <span className="text-gold text-3xl font-poppins font-bold">♠️ Poker Trainer</span>
           </div>
           <nav className="flex space-x-6">
-            <button className="text-[#2C3E50] hover:text-[#F4B400] transition-colors">
+            <button className="text-gold hover:text-gold-light transition-colors">
               <FaHome className="text-xl" />
             </button>
-            <button className="text-[#2C3E50] hover:text-[#F4B400] transition-colors">
+            <button className="text-gold hover:text-gold-light transition-colors">
               <FaChartBar className="text-xl" />
             </button>
-            <button className="text-[#2C3E50] hover:text-[#F4B400] transition-colors">
+            <button className="text-gold hover:text-gold-light transition-colors">
               <FaCog className="text-xl" />
             </button>
           </nav>
@@ -94,35 +94,35 @@ const QuizGame: React.FC = () => {
             transition={{ duration: 0.5 }}
           >
             {/* ゲーム情報カード */}
-            <div className="bg-white rounded-xl shadow-[0px_4px_12px_rgba(0,0,0,0.1)] p-8 mb-8">
+            <div className="bg-dark-card rounded-xl shadow-card p-8 mb-8 card-hover">
               <div className="grid grid-cols-3 gap-6 mb-8">
-                <div className="bg-[#1E2A38] rounded-lg p-5 text-white">
-                  <p className="text-sm text-[#F4B400]">ストリート</p>
-                  <p className="font-medium text-lg">{currentQuestion.street}</p>
+                <div className="bg-navy rounded-lg p-5">
+                  <p className="text-gold text-sm font-medium">ストリート</p>
+                  <p className="text-white text-lg">{currentQuestion.street}</p>
                 </div>
-                <div className="bg-[#1E2A38] rounded-lg p-5 text-white">
-                  <p className="text-sm text-[#F4B400]">アンティ</p>
-                  <p className="font-medium text-lg">{currentQuestion.anti}BB</p>
+                <div className="bg-navy rounded-lg p-5">
+                  <p className="text-gold text-sm font-medium">アンティ</p>
+                  <p className="text-white text-lg">{currentQuestion.anti}BB</p>
                 </div>
-                <div className="bg-[#1E2A38] rounded-lg p-5 text-white">
-                  <p className="text-sm text-[#F4B400]">ポジション</p>
-                  <p className="font-medium text-lg">{currentQuestion.position}</p>
+                <div className="bg-navy rounded-lg p-5">
+                  <p className="text-gold text-sm font-medium">ポジション</p>
+                  <p className="text-white text-lg">{currentQuestion.position}</p>
                 </div>
               </div>
 
               {/* シナリオ情報 */}
-              <div className="bg-[#F8F9FA] rounded-lg p-6 mb-8">
-                <h2 className="text-xl font-semibold text-[#1E2A38] mb-4">シナリオ</h2>
+              <div className="bg-navy rounded-lg p-6 mb-8">
+                <h2 className="text-xl font-poppins font-semibold text-gold mb-4">シナリオ</h2>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-[#F4B400] font-medium">スタック</p>
-                    <p className="text-2xl font-bold text-[#2C3E50]">
+                  <div className="bg-dark-card rounded-lg p-4">
+                    <p className="text-gold text-sm font-medium">スタック</p>
+                    <p className="text-white text-2xl font-bold">
                       {currentQuestion.scenario.stackSize}BB
                     </p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <p className="text-sm text-[#F4B400] font-medium">ポットサイズ</p>
-                    <p className="text-2xl font-bold text-[#2C3E50]">
+                  <div className="bg-dark-card rounded-lg p-4">
+                    <p className="text-gold text-sm font-medium">ポットサイズ</p>
+                    <p className="text-white text-2xl font-bold">
                       {currentQuestion.scenario.potSize}BB
                     </p>
                   </div>
@@ -138,17 +138,16 @@ const QuizGame: React.FC = () => {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleAnswer(option)}
                     disabled={!!selectedAnswer}
-                    className={`w-full py-4 px-6 rounded-lg text-lg font-medium transition-all
+                    className={`w-full py-4 px-6 rounded-lg text-lg transition-all shadow-card
                       ${
                         selectedAnswer === option
                           ? selectedAnswer === currentQuestion.correctAnswer
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-red-600 text-white'
                           : selectedAnswer
-                          ? 'bg-gray-100 text-gray-500'
-                          : 'bg-[#1E2A38] text-white hover:bg-[#F4B400] hover:text-[#1E2A38]'
-                      }
-                      shadow-[0px_4px_12px_rgba(0,0,0,0.1)]`}
+                          ? 'bg-dark-hover text-gray-400'
+                          : 'btn-primary'
+                      }`}
                   >
                     {option}
                   </motion.button>

@@ -1,3 +1,4 @@
+@import '@fontsource/poppins';
 @import '@fontsource/inter';
 
 @tailwind base;
@@ -19,11 +20,11 @@
 }
 
 body {
-  @apply bg-gray-100;
-  padding: 0;
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: #F8F9FA;
+  @apply bg-dark-bg text-white font-inter;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-poppins;
 }
 
 * {
@@ -52,4 +53,16 @@ body {
 
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out;
+}
+
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-glow;
+}
+
+.btn-primary {
+  @apply bg-gold hover:bg-gold-light text-navy font-medium transition-all duration-300;
+}
+
+.btn-secondary {
+  @apply bg-navy hover:bg-navy-light text-white font-medium transition-all duration-300;
 } 
