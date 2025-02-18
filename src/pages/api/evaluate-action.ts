@@ -136,6 +136,9 @@ export default async function handler(
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
+    // アクションを正規化（"raise 3bb" → "raise"）
+    const normalizedAction = action.toLowerCase().split(' ')[0] as ActionType;
+
     // 全てのアクションのEVを計算
     const evs: EVs = {
       fold: await calculateEVWithAI(hand, 'fold', position, bbStyle),
@@ -151,14 +154,13 @@ export default async function handler(
       .find(([_, ev]) => Math.abs(ev - maxEV) < 0.0001)?.[0] as ActionType || 'fold';
 
     // 選択されたアクションのEV
-    const selectedAction = action.toLowerCase() as ActionType;
-    const selectedEV = evs[selectedAction];
+    const selectedEV = evs[normalizedAction];
     
     // 選択されたアクションが最大EVのアクションと一致するか確認
     const isCorrect = Math.abs(selectedEV - maxEV) < 0.0001;
 
     console.log('Decision details:', {  // デバッグ用
-      selectedAction,
+      selectedAction: normalizedAction,
       selectedEV,
       bestAction,
       maxEV,
@@ -167,7 +169,7 @@ export default async function handler(
 
     const { explanation, evAnalysis } = await generateExplanationAndAnalysis({
       hand,
-      action: selectedAction,
+      action: normalizedAction,
       isCorrect,
       position,
       bbStyle,
@@ -181,7 +183,7 @@ export default async function handler(
 
     // より詳細な説明を生成
     let detailedExplanation = await generateDetailedExplanation({
-      selectedAction,
+      selectedAction: normalizedAction,
       bestAction,
       evs,
       evDifference,
@@ -243,62 +245,46 @@ async function generateExplanationAndAnalysis(
   const { hand, action, isCorrect, position, bbStyle, ev, evs, bestAction } = params;
 
   try {
-    console.log('Generating explanation for action:', {
-      action,
-      evs,
-      bestAction,
-      isCorrect
-    });
-
+    const safeEV = ev ?? evs[action] ?? 0;
+    
     const formattedHand = hand
       .map(card => `${card.rank}${suitMap[card.suit]}`)
       .join(' ');
 
-    const actionJP = actionMap[action.toLowerCase()] || action;
+    const actionJP = actionMap[action] || action;
     const bestActionJP = actionMap[bestAction] || bestAction;
 
-    // EVの差を計算
-    const evDifference = Math.abs(evs[bestAction] - ev);
-
-    console.log('Prompt parameters:', {
-      formattedHand,
-      actionJP,
-      bestActionJP,
-      ev,
-      evDifference
-    });
+    // EVの分析文字列を生成
+    const evAnalysisText = Object.entries(evs)
+      .map(([act, val]) => `${actionMap[act]}: ${val.toFixed(2)}BB`)
+      .join('\n');
 
     const prompt = `
-ポーカーのヘッズアップ状況の分析:
-ハンド: ${formattedHand}
-ポジション: ${position}
-選択: ${actionJP} (EV: ${ev.toFixed(2)})
-相手: ${bbStyle.type} - ${bbStyle.characteristics}
+ポーカーの状況分析:
 
-各アクションのEV:
-${Object.entries(evs)
-  .map(([act, val]) => `${actionMap[act]}: ${val.toFixed(2)}`)
-  .join(', ')}
+■ 基本情報
+・ストリート: プリフロップ
+・あなたの位置: ${position}
+・相手の位置: BB
+・あなたのハンド: ${formattedHand}
 
-最適なアクション: ${bestActionJP} (EV: ${evs[bestAction].toFixed(2)})
+■ アクション情報
+・選択したアクション: ${actionJP}
+・相手(BB)のタイプ: ${bbStyle.type}
+・相手の特徴: ${bbStyle.characteristics}
 
-以下の点を考慮して、150文字以内で一貫性のある解説を生成してください：
-1. 選択されたアクションの評価
-2. ハンドの強さ
-3. ポジションの影響
-4. 相手のプレイスタイル
-5. EVの結果との整合性
+■ 期待値分析
+${evAnalysisText}
 
-解説は必ず、選択されたアクションが${isCorrect ? '最適である' : 'より良い選択が存在する'}という結論と一致するようにしてください。`;
-
-    console.log('Sending prompt to OpenAI:', prompt);
+選択した${actionJP}は${isCorrect ? '最適な選択です' : '最適ではありません'}。
+プリフロップの${position} vs BB の状況で、相手の特徴を考慮した150文字以内の解説を提供してください。`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "あなたはポーカーのプロコーチです。EVの計算結果と一貫性のある解説を提供してください。"
+          content: "ポーカーのプロコーチとして、プリフロップのヘッズアップ状況（特に${position} vs BB）に特化した具体的なアドバイスを提供してください。EVの計算結果と一貫性のある解説を心がけてください。"
         },
         {
           role: "user",
@@ -306,25 +292,32 @@ ${Object.entries(evs)
         }
       ],
       max_tokens: 200,
-      temperature: 0.5,
+      temperature: 0.7,
+      presence_penalty: 0.3,
+      frequency_penalty: 0.3,
     });
-
-    console.log('OpenAI response:', response.choices[0]?.message);
 
     let explanation = response.choices[0]?.message?.content;
 
     if (!explanation) {
-      console.warn('No explanation generated from OpenAI');
-      explanation = getDefaultExplanation(isCorrect, action, bestAction);
+      explanation = generateFallbackExplanation(
+        isCorrect,
+        actionJP,
+        bestActionJP,
+        hand,
+        position,
+        bbStyle,
+        safeEV,
+        evs[bestAction]
+      );
     }
 
-    // 文章が完結していない場合の処理
     if (!explanation.endsWith('。')) {
       explanation += '。';
     }
 
-    // EV分析の文字列を生成
-    const evAnalysis = formatEVAnalysis(evs, action, bestAction);
+    // EV分析の表示形式を改善
+    const evAnalysis = formatEVAnalysis(evs, action, bestAction, position);
 
     return {
       explanation,
@@ -332,37 +325,44 @@ ${Object.entries(evs)
     };
 
   } catch (error) {
-    console.error('Detailed explanation generation error:', {
-      error,
-      params: {
-        action,
-        isCorrect,
-        ev,
-        evs,
-        bestAction
-      }
-    });
+    console.error('Explanation generation error:', error);
+    const actionJP = actionMap[action] || action;
+    const bestActionJP = actionMap[bestAction] || bestAction;
     
     return {
-      explanation: getDefaultExplanation(isCorrect, action, bestAction),
-      evAnalysis: formatEVAnalysis(evs, action, bestAction)
+      explanation: generateFallbackExplanation(
+        isCorrect,
+        actionJP,
+        bestActionJP,
+        hand,
+        position,
+        bbStyle,
+        ev ?? 0,
+        evs[bestAction]
+      ),
+      evAnalysis: formatEVAnalysis(evs, action, bestAction, position)
     };
   }
 }
 
-// デフォルトの説明を生成する関数を修正
-function getDefaultExplanation(
+function generateFallbackExplanation(
   isCorrect: boolean,
-  action: string,
-  bestAction: string
+  actionJP: string,
+  bestActionJP: string,
+  hand: Card[],
+  position: string,
+  bbStyle: any,
+  ev: number,
+  bestEV: number
 ): string {
-  const actionJP = actionMap[action.toLowerCase()] || action;
-  const bestActionJP = actionMap[bestAction] || bestAction;
+  const formattedHand = hand
+    .map(card => `${card.rank}${suitMap[card.suit]}`)
+    .join(' ');
 
   if (isCorrect) {
-    return `${actionJP}は状況に応じた最適な選択です。期待値の計算からも、このアクションが最も有利であることが分かります。`;
+    return `プリフロップの${position} vs BB の状況で、${formattedHand}のハンドを持ち、BBポジションの${bbStyle.type}タイプの相手に対して${actionJP}を選択したのは適切です。期待値${ev.toFixed(2)}BBは最も高い選択肢となっています。`;
   } else {
-    return `${actionJP}よりも${bestActionJP}の方が期待値が高く、より良い選択となります。状況を考慮すると、${bestActionJP}が最適な判断です。`;
+    return `プリフロップの${position} vs BB の状況で、${formattedHand}のハンドを持ち、BBポジションの${bbStyle.type}タイプの相手に対しては${bestActionJP}の方が良い選択です。期待値は${bestActionJP}が${bestEV.toFixed(2)}BBで、${actionJP}の${ev.toFixed(2)}BBより高くなります。`;
   }
 }
 
@@ -370,22 +370,26 @@ function getDefaultExplanation(
 function formatEVAnalysis(
   evs: EVs,
   selectedAction: ActionType,
-  bestAction: ActionType
+  bestAction: ActionType,
+  position: string
 ): string {
+  // ヘッダー部分を修正
+  const header = `■ プリフロップ\n・あなたの位置: ${position}\n・相手の位置: BB\n\n■ 期待値分析:\n`;
+  
   const sortedActions = Object.entries(evs)
     .sort(([, a], [, b]) => b - a)
     .map(([action, ev]) => {
       const actionJP = actionMap[action];
       const evFormatted = ev.toFixed(2);
       const markers = [
-        action === bestAction ? '👑' : '',
-        action === selectedAction.toLowerCase() ? '➡️' : '',
+        action === bestAction ? '👑 最適' : '',
+        action === selectedAction.toLowerCase() ? '➡️ 選択' : '',
       ].filter(Boolean).join(' ');
       
-      return `${markers ? `${markers} ` : ''}${actionJP}: ${evFormatted}BB`;
+      return `${markers ? `${markers}: ` : ''}${actionJP}: ${evFormatted}BB`;
     });
 
-  return sortedActions.join('\n');
+  return header + sortedActions.join('\n');
 }
 
 // 詳細な説明を生成する関数を追加
