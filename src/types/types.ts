@@ -10,10 +10,9 @@ export interface Card {
 export type BBCategory = 'Turtle' | 'Caller' | 'Viking' | 'Hunter' | 'Gambler';
 
 export interface BBStyle {
-  category: BBCategory;
+  category: string;
   type: string;
   characteristics: string;
-  strategy: string;
 }
 
 export interface PokerQuestion {
