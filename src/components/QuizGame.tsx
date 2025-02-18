@@ -183,7 +183,15 @@ const QuizGame: React.FC = () => {
               </div>
             </div>
           </div>
-
+          <div className="bg-dark-card/90 backdrop-blur-sm rounded-xl shadow-card p-4 border border-gold/10">
+            <div className="flex items-center gap-3">
+              <FaMapMarkerAlt className="text-gold text-xl" />
+              <div>
+                <h3 className="text-gold font-medium">相手のポジション</h3>
+                <p className="text-white/90 text-lg font-semibold">BB</p>
+              </div>
+            </div>
+          </div>
           <div className="bg-dark-card/90 backdrop-blur-sm rounded-xl shadow-card p-4 border border-gold/10">
             <div className="flex items-center gap-3">
               <div className="text-2xl">{opponentStyle.icon}</div>

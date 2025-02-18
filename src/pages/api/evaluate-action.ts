@@ -366,15 +366,15 @@ function generateFallbackExplanation(
   }
 }
 
-// EVの分析表示を整形する関数
+// EVの分析表示を整形する関数を更新
 function formatEVAnalysis(
   evs: EVs,
   selectedAction: ActionType,
   bestAction: ActionType,
   position: string
 ): string {
-  // ヘッダー部分を修正
-  const header = `■ プリフロップ\n・あなたの位置: ${position}\n・相手の位置: BB\n\n■ 期待値分析:\n`;
+  // ヘッダー部分を修正してストリート情報を追加
+  const header = `■ ストリート: プリフロップ\n■ ポジション情報\n・あなたの位置: ${position}\n・相手の位置: BB\n\n■ 期待値分析:\n`;
   
   const sortedActions = Object.entries(evs)
     .sort(([, a], [, b]) => b - a)
