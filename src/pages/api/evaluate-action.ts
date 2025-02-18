@@ -35,6 +35,88 @@ type ApiResponse = {
   ev?: number;
 };
 
+// アクションの型を定義
+type ActionType = 'fold' | 'call' | 'raise';
+
+// EVsの型を定義
+type EVs = {
+  [key in ActionType]: number;
+};
+
+// EVの計算をOpenAIに依頼する関数
+async function calculateEVWithAI(
+  hand: Card[],
+  action: ActionType,
+  position: string,
+  bbStyle: any
+): Promise<number> {
+  try {
+    const formattedHand = hand
+      .map(card => `${card.rank}${suitMap[card.suit]}`)
+      .join(' ');
+
+    const prompt = `
+あなたはポーカーのEV計算の専門家です。
+以下の状況でのEV（期待値）をgto solverを参考にして計算してください。わからない場合は、推測してください。
+数値のみを返してください。
+
+状況：
+・自分のハンド: ${formattedHand}
+・ポジション: ${position}
+・アクション: ${actionMap[action]}
+・相手の特徴: ${bbStyle.type} - ${bbStyle.characteristics}
+
+考慮すべき点：
+1. ハンドの強さ
+2. ポジションの有利不利
+3. 相手のプレイスタイル
+4. アクションの妥当性
+
+返答は数値のみでお願いします。`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "あなたはポーカーのEV計算の専門家として、EV（期待値）をgto solverを参考にして計算又は推測します。数値のみを返します。"
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 10,
+      temperature: 0.3,
+    });
+
+    const evText = response.choices[0]?.message?.content || "0";
+    const ev = parseFloat(evText.trim());
+    
+    // 有効な数値でない場合やレンジ外の場合はデフォルト値を返す
+    if (isNaN(ev) || ev < -5 || ev > 5) {
+      console.warn('Invalid EV calculated:', evText);
+      return getDefaultEV(action);
+    }
+
+    return ev;
+
+  } catch (error) {
+    console.error('EV calculation error:', error);
+    return getDefaultEV(action);
+  }
+}
+
+// デフォルトのEV値を返す関数
+function getDefaultEV(action: ActionType): number {
+  switch (action) {
+    case 'fold': return 0;
+    case 'call': return 1;
+    case 'raise': return 1.5;
+    default: return 0;
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>
@@ -54,35 +136,61 @@ export default async function handler(
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
-    const handStrength = evaluateHandStrength(hand);
-    
     // 全てのアクションのEVを計算
-    const evs = {
-      fold: calculateEV(handStrength, 'fold', position, bbStyle),
-      call: calculateEV(handStrength, 'call', position, bbStyle),
-      raise: calculateEV(handStrength, 'raise', position, bbStyle)
+    const evs: EVs = {
+      fold: await calculateEVWithAI(hand, 'fold', position, bbStyle),
+      call: await calculateEVWithAI(hand, 'call', position, bbStyle),
+      raise: await calculateEVWithAI(hand, 'raise', position, bbStyle)
     };
 
-    const maxEV = Math.max(...Object.values(evs));
-    const bestAction = Object.entries(evs).find(([_, ev]) => ev === maxEV)?.[0];
-    const selectedEV = calculateEV(handStrength, action, position, bbStyle);
-    const isCorrect = action.toLowerCase() === bestAction;
+    console.log('Calculated EVs:', evs); // デバッグ用
 
-    // プレイの解説とEV分析を別々に生成
+    // 最大EVを持つアクションを特定
+    const maxEV = Math.max(...Object.values(evs));
+    const bestAction = Object.entries(evs)
+      .find(([_, ev]) => Math.abs(ev - maxEV) < 0.0001)?.[0] as ActionType || 'fold';
+
+    // 選択されたアクションのEV
+    const selectedAction = action.toLowerCase() as ActionType;
+    const selectedEV = evs[selectedAction];
+    
+    // 選択されたアクションが最大EVのアクションと一致するか確認
+    const isCorrect = Math.abs(selectedEV - maxEV) < 0.0001;
+
+    console.log('Decision details:', {  // デバッグ用
+      selectedAction,
+      selectedEV,
+      bestAction,
+      maxEV,
+      isCorrect
+    });
+
     const { explanation, evAnalysis } = await generateExplanationAndAnalysis({
       hand,
-      action,
+      action: selectedAction,
       isCorrect,
       position,
       bbStyle,
       ev: selectedEV,
       evs,
-      bestAction: bestAction || ''
+      bestAction
+    });
+
+    // EVの差を計算
+    const evDifference = maxEV - selectedEV;
+
+    // より詳細な説明を生成
+    let detailedExplanation = await generateDetailedExplanation({
+      selectedAction,
+      bestAction,
+      evs,
+      evDifference,
+      isCorrect
     });
 
     return res.status(200).json({
       isCorrect,
-      explanation,
+      explanation: `${explanation}\n\n${detailedExplanation}`,
       evAnalysis,
       ev: selectedEV
     });
@@ -114,69 +222,10 @@ function evaluateHandStrength(hand: Card[]): number {
   return Math.min(1, strength);
 }
 
-function calculateEV(
-  handStrength: number,
-  action: string,
-  position: string,
-  bbStyle: any
-): number {
-  const potSize = 1.5; // BBを1とした時のポットサイズ
-  const callSize = 1; // コールのサイズ（BB単位）
-  const raiseSize = 3; // レイズのサイズ（BB単位）
-  
-  // 相手のレンジに対する勝率の推定
-  const winRate = handStrength / 100;
-  
-  // アクションごとのEV計算
-  switch (action.toLowerCase()) {
-    case 'fold':
-      return 0; // フォールドのEVは常に0
-      
-    case 'call':
-      // コールのEV = 勝率 * (ポット + コールサイズ) - (1 - 勝率) * コールサイズ
-      return (winRate * (potSize + callSize)) - ((1 - winRate) * callSize);
-      
-    case 'raise':
-      // レイズのEV = 相手がフォールドする確率 * 現在のポット + 
-      //            相手がコールする確率 * (勝率 * (ポット + レイズサイズ * 2) - レイズサイズ)
-      const foldEquity = calculateFoldEquity(bbStyle, handStrength);
-      const callEquity = 1 - foldEquity;
-      return (foldEquity * potSize) + 
-             (callEquity * (winRate * (potSize + raiseSize * 2) - raiseSize));
-      
-    default:
-      return 0;
-  }
-}
-
-function calculateFoldEquity(bbStyle: any, handStrength: number): number {
-  // 相手のスタイルに基づいてフォールド率を調整
-  let baseFoldRate = 0.4; // デフォルトのフォールド率
-  
-  switch (bbStyle.type.toLowerCase()) {
-    case 'tight':
-      baseFoldRate += 0.1;
-      break;
-    case 'loose':
-      baseFoldRate -= 0.1;
-      break;
-    case 'aggressive':
-      baseFoldRate -= 0.15;
-      break;
-    case 'passive':
-      baseFoldRate += 0.15;
-      break;
-  }
-  
-  // ハンドの強さに応じて調整
-  const strengthAdjustment = (100 - handStrength) / 200; // 0.0 ~ 0.5の調整値
-  
-  return Math.max(0, Math.min(1, baseFoldRate + strengthAdjustment));
-}
-
+// ExplanationParamsの型も更新
 type ExplanationParams = {
   hand: Card[];
-  action: string;
+  action: ActionType;
   isCorrect: boolean;
   position: string;
   bbStyle: {
@@ -184,45 +233,72 @@ type ExplanationParams = {
     characteristics: string;
   };
   ev: number;
-  evs: {
-    fold: number;
-    call: number;
-    raise: number;
-  };
-  bestAction: string;
+  evs: EVs;
+  bestAction: ActionType;
 };
 
 async function generateExplanationAndAnalysis(
   params: ExplanationParams
 ): Promise<{ explanation: string; evAnalysis: string }> {
-  const { hand, action, isCorrect, position, bbStyle, evs, bestAction } = params;
-  
-  // actionJPとbestActionJPをtry-catchの外で定義
-  const actionJP = actionMap[action.toLowerCase()] || action;
-  const bestActionJP = actionMap[bestAction] || bestAction;
+  const { hand, action, isCorrect, position, bbStyle, ev, evs, bestAction } = params;
 
   try {
+    console.log('Generating explanation for action:', {
+      action,
+      evs,
+      bestAction,
+      isCorrect
+    });
+
     const formattedHand = hand
       .map(card => `${card.rank}${suitMap[card.suit]}`)
       .join(' ');
 
-    // シンプルで具体的なプロンプト
+    const actionJP = actionMap[action.toLowerCase()] || action;
+    const bestActionJP = actionMap[bestAction] || bestAction;
+
+    // EVの差を計算
+    const evDifference = Math.abs(evs[bestAction] - ev);
+
+    console.log('Prompt parameters:', {
+      formattedHand,
+      actionJP,
+      bestActionJP,
+      ev,
+      evDifference
+    });
+
     const prompt = `
+ポーカーのヘッズアップ状況の分析:
 ハンド: ${formattedHand}
 ポジション: ${position}
-選択したアクション: ${actionJP}
-相手のタイプ: ${bbStyle.type}
-相手の特徴: ${bbStyle.characteristics}
+選択: ${actionJP} (EV: ${ev.toFixed(2)})
+相手: ${bbStyle.type} - ${bbStyle.characteristics}
 
-このプレイは${isCorrect ? '最適な選択です' : `最適ではありません。最適な選択は${bestActionJP}です`}。
-100文字程度で、このプレイの評価と理由を説明してください。`;
+各アクションのEV:
+${Object.entries(evs)
+  .map(([act, val]) => `${actionMap[act]}: ${val.toFixed(2)}`)
+  .join(', ')}
+
+最適なアクション: ${bestActionJP} (EV: ${evs[bestAction].toFixed(2)})
+
+以下の点を考慮して、150文字以内で一貫性のある解説を生成してください：
+1. 選択されたアクションの評価
+2. ハンドの強さ
+3. ポジションの影響
+4. 相手のプレイスタイル
+5. EVの結果との整合性
+
+解説は必ず、選択されたアクションが${isCorrect ? '最適である' : 'より良い選択が存在する'}という結論と一致するようにしてください。`;
+
+    console.log('Sending prompt to OpenAI:', prompt);
 
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "ポーカーのプロコーチとして、簡潔で具体的なアドバイスを提供してください。専門用語は避け、分かりやすい日本語で説明してください。"
+          content: "あなたはポーカーのプロコーチです。EVの計算結果と一貫性のある解説を提供してください。"
         },
         {
           role: "user",
@@ -231,20 +307,15 @@ async function generateExplanationAndAnalysis(
       ],
       max_tokens: 200,
       temperature: 0.5,
-      presence_penalty: 0,
-      frequency_penalty: 0,
-      top_p: 0.8,
     });
+
+    console.log('OpenAI response:', response.choices[0]?.message);
 
     let explanation = response.choices[0]?.message?.content;
 
-    // 応答がない場合のフォールバック
     if (!explanation) {
-      if (isCorrect) {
-        explanation = `${actionJP}は適切な判断です。${formattedHand}のハンドは${position}のポジションで${bbStyle.type}タイプの相手に対して良い選択肢となります。`;
-      } else {
-        explanation = `${actionJP}よりも${bestActionJP}の方が良い選択です。${formattedHand}のハンドは${position}のポジションで${bbStyle.type}タイプの相手に対しては${bestActionJP}が最適です。`;
-      }
+      console.warn('No explanation generated from OpenAI');
+      explanation = getDefaultExplanation(isCorrect, action, bestAction);
     }
 
     // 文章が完結していない場合の処理
@@ -252,7 +323,7 @@ async function generateExplanationAndAnalysis(
       explanation += '。';
     }
 
-    // EV分析の作成
+    // EV分析の文字列を生成
     const evAnalysis = formatEVAnalysis(evs, action, bestAction);
 
     return {
@@ -261,28 +332,48 @@ async function generateExplanationAndAnalysis(
     };
 
   } catch (error) {
-    console.error('Generation error:', error);
+    console.error('Detailed explanation generation error:', {
+      error,
+      params: {
+        action,
+        isCorrect,
+        ev,
+        evs,
+        bestAction
+      }
+    });
     
-    // エラー時のフォールバックメッセージ
-    const fallbackExplanation = isCorrect
-      ? `${actionJP}は適切な判断です。期待値計算からも最適な選択であることが分かります。`
-      : `${actionJP}よりも${bestActionJP}の方が期待値が高く、より良い選択となります。`;
-
     return {
-      explanation: fallbackExplanation,
+      explanation: getDefaultExplanation(isCorrect, action, bestAction),
       evAnalysis: formatEVAnalysis(evs, action, bestAction)
     };
   }
 }
 
-// EV分析のフォーマットをより見やすく改善
-function formatEVAnalysis(
-  evs: { [key: string]: number },
-  selectedAction: string,
+// デフォルトの説明を生成する関数を修正
+function getDefaultExplanation(
+  isCorrect: boolean,
+  action: string,
   bestAction: string
 ): string {
+  const actionJP = actionMap[action.toLowerCase()] || action;
+  const bestActionJP = actionMap[bestAction] || bestAction;
+
+  if (isCorrect) {
+    return `${actionJP}は状況に応じた最適な選択です。期待値の計算からも、このアクションが最も有利であることが分かります。`;
+  } else {
+    return `${actionJP}よりも${bestActionJP}の方が期待値が高く、より良い選択となります。状況を考慮すると、${bestActionJP}が最適な判断です。`;
+  }
+}
+
+// EVの分析表示を整形する関数
+function formatEVAnalysis(
+  evs: EVs,
+  selectedAction: ActionType,
+  bestAction: ActionType
+): string {
   const sortedActions = Object.entries(evs)
-    .sort(([, a], [, b]) => b - a) // EVの高い順にソート
+    .sort(([, a], [, b]) => b - a)
     .map(([action, ev]) => {
       const actionJP = actionMap[action];
       const evFormatted = ev.toFixed(2);
@@ -291,8 +382,29 @@ function formatEVAnalysis(
         action === selectedAction.toLowerCase() ? '➡️' : '',
       ].filter(Boolean).join(' ');
       
-      return `${markers ? markers + ' ' : ''}${actionJP}: ${evFormatted}BB`;
+      return `${markers ? `${markers} ` : ''}${actionJP}: ${evFormatted}BB`;
     });
 
   return sortedActions.join('\n');
+}
+
+// 詳細な説明を生成する関数を追加
+async function generateDetailedExplanation({
+  selectedAction,
+  bestAction,
+  evs,
+  evDifference,
+  isCorrect
+}: {
+  selectedAction: ActionType;
+  bestAction: ActionType;
+  evs: EVs;
+  evDifference: number;
+  isCorrect: boolean;
+}): Promise<string> {
+  if (isCorrect) {
+    return `${actionMap[selectedAction]}は最適な選択です。期待値(${evs[selectedAction].toFixed(2)})が最も高いアクションを選択できました。`;
+  } else {
+    return `${actionMap[selectedAction]}の期待値は${evs[selectedAction].toFixed(2)}ですが、${actionMap[bestAction]}の期待値(${evs[bestAction].toFixed(2)})の方が${evDifference.toFixed(2)}高くなります。より良い選択肢が存在します。`;
+  }
 } 
