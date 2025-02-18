@@ -23,7 +23,7 @@ const baseQuestions = [
   {
     id: '1',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -48,7 +48,7 @@ const baseQuestions = [
   {
     id: '2',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -74,7 +74,7 @@ const baseQuestions = [
   {
     id: '3',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -99,7 +99,7 @@ const baseQuestions = [
   {
     id: '4',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -124,7 +124,7 @@ const baseQuestions = [
   {
     id: '5',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -147,7 +147,7 @@ const baseQuestions = [
   {
     id: '6',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -194,7 +194,7 @@ const baseQuestions = [
   {
     id: '8',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -218,7 +218,7 @@ const baseQuestions = [
   {
     id: '9',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -242,7 +242,7 @@ const baseQuestions = [
   {
     id: '10',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -266,7 +266,7 @@ const baseQuestions = [
   {
     id: '11',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -290,7 +290,7 @@ const baseQuestions = [
   {
     id: '12',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -314,7 +314,7 @@ const baseQuestions = [
   {
     id: '13',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -338,7 +338,7 @@ const baseQuestions = [
   {
     id: '14',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -362,7 +362,7 @@ const baseQuestions = [
   {
     id: '15',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -386,7 +386,7 @@ const baseQuestions = [
   {
     id: '16',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -410,7 +410,7 @@ const baseQuestions = [
   {
     id: '17',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -433,7 +433,7 @@ const baseQuestions = [
   {
     id: '18',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -456,7 +456,7 @@ const baseQuestions = [
   {
     id: '19',
     street: 'preflop',
-    anti: 0,
+    anti: 1,
     position: 'SB',
     bbStyles: bbStyles,
     scenario: {
@@ -478,8 +478,9 @@ const baseQuestions = [
   }
 ];
 
-// 問題データにランダムなBBスタイルを追加して出力
+// 問題データにBBスタイルを追加して出力
 export const questions: PokerQuestion[] = baseQuestions.map(q => ({
   ...q,
-  bbStyles: bbStyles  // ランダム化をコンポーネント側で行うため、全てのスタイルを渡す
+  anti: q.anti ?? 1,  // antiが未定義の場合は1をデフォルト値として設定
+  bbStyles: bbStyles
 })); 
