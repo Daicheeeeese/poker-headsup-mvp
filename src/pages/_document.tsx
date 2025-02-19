@@ -4,6 +4,9 @@ export default function Document() {
   return (
     <Html lang="ja">
       <Head>
+        {/* Google Site Verification */}
+        <meta name="google-site-verification" content="QnZoLRFeR9TfWYROTey81hXeLAIhGsH5iRGiJHr5JAg" />
+        
         {/* Google AdSense 確認用のメタタグ */}
         <meta name="google-adsense-account" content="ca-pub-8437153362194493" />
         
